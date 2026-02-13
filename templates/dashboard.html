@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Title -->
+  <h3 class="mb-4 text-primary text-center fw-bold">📊 Pneumonia Detection Reports</h3>
+
+  <!-- Upload + Patient Info -->
+  <div class="card p-4 shadow-sm mb-4">
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label class="form-label">Patient ID</label>
+          <input type="text" name="patient_id" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Name</label>
+          <input type="text" name="patient_name" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Age</label>
+          <input type="number" name="patient_age" min="0" max="120" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Gender</label>
+          <select name="patient_gender" class="form-select" required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <input class="form-control mb-3 mx-auto" type="file" name="file" accept="image/*" required style="max-width: 400px;">
+        <button class="btn btn-primary btn-lg px-4 shadow" type="submit">Upload & Analyze</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Stats Overview -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm p-3 border-info">
+        <h6>Total Tests</h6>
+        <h2 class="fw-bold text-info">{{ total }}</h2>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm p-3 border-success">
+        <h6>Normal Cases</h6>
+        <h2 class="fw-bold text-success">{{ normal }}</h2>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm p-3 border-danger">
+        <h6>Pneumonia Cases</h6>
+        <h2 class="fw-bold text-danger">{{ pneumonia }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Doughnut Chart -->
+  <div class="card shadow-sm p-3 mb-4 text-center">
+    <h5 class="text-secondary mb-3">📈 Test Distribution</h5>
+    <div style="display: flex; justify-content: center;">
+      <canvas id="pieChart" style="max-width: 220px; max-height: 220px;"></canvas>
+    </div>
+  </div>
+
+  <!-- Test Results Table -->
+  {% if results %}
+  <div class="card p-3 shadow-sm">
+    <h5 class="mb-3 text-primary">🧪 Recent Test Results</h5>
+    <div class="table-responsive">
+      <table class="table align-middle table-hover">
+        <thead class="table-primary">
+          <tr>
+            <th>Patient ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Image</th>
+            <th>Result</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.age }}</td>
+            <td>{{ r.gender }}</td>
+            <td><img src="{{ r.image }}" width="70" class="rounded-3 shadow-sm"></td>
+            <td class="{% if r.result == 'Pneumonia' %}text-danger fw-bold{% else %}text-success fw-bold{% endif %}">
+              {{ r.result }}
+            </td>
+            <td>{{ r.confidence }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-center text-muted">No tests performed yet. Upload an image above to begin.</p>
+  {% endif %}
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('pieChart');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Normal', 'Pneumonia'],
+    datasets: [{
+      data: [{{ normal }}, {{ pneumonia }}],
+      backgroundColor: ['#4CAF50', '#F44336'],
+      hoverOffset: 10,
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { enabled: true },
+    },
+    cutout: '65%'
+  }
+});
+</script>
+
+{% endblock %}
